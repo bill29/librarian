@@ -1,4 +1,4 @@
-#Video
+
 # **librarian**
 Librarian software written in javafx, use mysql to  manage books, borrowings, statistics, manage employees, readers ..
 Perform all transactions, manage by computer.
