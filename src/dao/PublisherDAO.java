@@ -7,12 +7,10 @@ import java.util.List;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
-import com.sun.javafx.beans.IDProperty;
 
-import model.Category;
 import model.Publisher;
 
-public class PublisherDAO {
+public class PublisherDAO implements IPublisherDAO{
 	public List<Publisher> getAllPublisher(){
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
@@ -32,7 +30,7 @@ public class PublisherDAO {
 				listPublishers.add(new Publisher(id_publisher, namePublisher,address,email));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -67,7 +65,7 @@ public class PublisherDAO {
 				listPublishers.add(new Publisher(id_publisher, namePublisher,address,email));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);

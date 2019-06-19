@@ -1,13 +1,12 @@
 package controller.UpdateBookController;
 
-import java.io.IOException;
 import java.net.URL;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import controller.BookInfoController;
 import dao.BookDAO;
 import dao.CategoryDAO;
 import dao.PublisherDAO;
@@ -15,16 +14,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
-import javafx.scene.control.ButtonType;
 import model.Book;
 import model.Category;
 import model.Publisher;
@@ -32,7 +31,7 @@ import model.ClassDTO.BookDTO;
 
 public class ModifyBookController implements Initializable{
 	@FXML
-	private TextField tfISBN, tfName, tfAuthor, tfQuantity;
+	private TextField tfISBN, tfName, tfAuthor;
 	@FXML
 	private ComboBox<String> cbCategory, cbPublisher;
 	@FXML
@@ -66,7 +65,13 @@ public class ModifyBookController implements Initializable{
 		
 		cbCategory.setItems(nameCategories);
 		cbPublisher.setItems(namePublisher);
-		
+		datePicker.setDayCellFactory(picker -> new DateCell() {
+	        public void updateItem(LocalDate date, boolean empty) {
+	            super.updateItem(date, empty);
+	            LocalDate today = LocalDate.now();
+	            setDisable(empty || date.compareTo(today) > 0 );
+	        }
+	    });
 	}
 	
 	public void setBook(BookDTO modifiedBook) {
@@ -74,7 +79,6 @@ public class ModifyBookController implements Initializable{
 		tfISBN.setText(modifiedBook.getIdIsbn());
 		tfName.setText(modifiedBook.getName());
 		tfAuthor.setText(modifiedBook.getAuthor());
-		tfQuantity.setText(String.valueOf(modifiedBook.getQuantity()));
 		cbCategory.getSelectionModel().select(modifiedBook.getNameCategory());
 		cbPublisher.getSelectionModel().select(modifiedBook.getNamePublisher());
 		datePicker.setValue(modifiedBook.getPublishingYear().toLocalDate());
@@ -106,19 +110,8 @@ public class ModifyBookController implements Initializable{
 		int id_publisher = listPublisher.get(indexPub).getIdPublisher();
 		int id_category = listCategory.get(indexCate).getIdCategory();
 		Date publishing_year = Date.valueOf(datePicker.getValue());
-		int quantity=-1;
-		try {
-			quantity = Integer.parseInt(tfQuantity.getText());
-		}catch(NumberFormatException e) {
-			if(!checkISBN(id_isbn)) {
-				Alert alert = new Alert(AlertType.ERROR, "Quantity is not valid", ButtonType.OK);
-				alert.setHeaderText(null);
-				alert.showAndWait();
-				return;
-			}
-		}
 		
-		Book book = new Book(modifiedBook.getIdBook(), id_isbn, name, author, id_category, id_publisher, publishing_year, quantity,modifiedBook.getRemain());
+		Book book = new Book(modifiedBook.getIdBook(), id_isbn, name, author, id_category, id_publisher, publishing_year, modifiedBook.getQuantity(),modifiedBook.getRemain());
 		
 		
 		Alert alert = new Alert(AlertType.CONFIRMATION, "Do you want to modify?", ButtonType.YES,ButtonType.NO);
@@ -130,6 +123,9 @@ public class ModifyBookController implements Initializable{
 		bookDAO.modifyBook(book);
 		Stage stage = (Stage)((Node)evt.getSource()).getScene().getWindow();
 		stage.close();
+		Alert alert2 = new Alert(AlertType.INFORMATION, "Modify successful", ButtonType.OK);
+		alert2.setHeaderText(null);
+		alert2.showAndWait();
 		
 	}
 	

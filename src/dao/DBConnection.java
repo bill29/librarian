@@ -4,8 +4,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.security.auth.login.Configuration;
-
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 
@@ -17,7 +15,7 @@ public class DBConnection {
 			String driver = DEFAULT_DRIVER;
 			String url = "jdbc:mysql://localhost:3306/qltv";
 			String user = "root";
-			String pass = "minhdan";
+			String pass = "1098";
 			if(driver == null) driver = DEFAULT_DRIVER;
 			Class.forName(driver);
 			cnn = (Connection) DriverManager.getConnection(url,user,pass);

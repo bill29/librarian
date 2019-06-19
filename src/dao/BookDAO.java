@@ -8,15 +8,17 @@ import java.util.List;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
-import com.sun.javafx.beans.IDProperty;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Alert.AlertType;
 import model.Book;
-import model.Category;
 import model.ClassDTO.BookDTO;
 
-public class BookDAO{
-
-	public List<Book> getAllBook() {
+public class BookDAO implements IBookDAO{
+	
+	@Override
+	public List<Book> getAllBook(){
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -42,7 +44,7 @@ public class BookDAO{
 				listBook.add(new Book(id_book,id_isbn,name,author,id_category,id_publisher,publishing_year,quantity,remain));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			System.out.println("ISBN Duplicate");
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -50,6 +52,7 @@ public class BookDAO{
 		return listBook;
 	}
 	
+	@Override
 	public List<BookDTO> getAllBookDTO() {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
@@ -77,7 +80,7 @@ public class BookDAO{
 				listBookDTO.add(new BookDTO(new Book(id_book,id_isbn,name,author,id_category,id_publisher,publishing_year,quantity,remain), namePublisher,nameCategory));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -86,6 +89,7 @@ public class BookDAO{
 		return listBookDTO;
 	}
 	
+	@Override
 	public <T> List<BookDTO> searchBy(String column, T keyw){
 		if(column == null || keyw == null) return getAllBookDTO();
 		String condition;
@@ -122,7 +126,7 @@ public class BookDAO{
 				listBookDTO.add(new BookDTO(new Book(id_book,id_isbn,name,author,id_category,id_publisher,publishing_year,quantity,remain), namePublisher,nameCategory));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -131,6 +135,7 @@ public class BookDAO{
 		return listBookDTO;
 	}
 	
+	@Override
 	public void addBook(Book newBook) {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
@@ -147,19 +152,20 @@ public class BookDAO{
 			id_publisher = newBook.getIdPublisher();
 			quantity = newBook.getQuantity();
 			publishing_year = newBook.getPublishingYear();
-			String query = "INSERT INTO book VALUES (null,'"+id_isbn+"','"+name+"','"+author+"','"+id_category+"','"+id_publisher+"','"+publishing_year+"','"+quantity+"')";
-//			System.out.println(query);
+			String query = "INSERT INTO book VALUES (null,'"+id_isbn+"','"+name+"','"+author+"','"+id_category+"','"+id_publisher+"','"+publishing_year+"','"+quantity+"','"+quantity+"')";
+			System.out.println(query);
 			ps = (PreparedStatement) cnn.prepareStatement(query);
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
 		}
 	}
 	
-	public void deleteBook(Book book) {
+	@Override
+	public boolean deleteBook(Book book) {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -169,40 +175,85 @@ public class BookDAO{
 			ps = (PreparedStatement) cnn.prepareStatement(query);
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// 
+			
+			return false;
 		}finally {
 			DBConnection.close(rs, ps, cnn);
 		}
+		return true;
 	}
-	
+
+	@Override
 	public void modifyBook(Book book) {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
-			String id_isbn,name,author;
-			int id_category,id_publisher,quantity;
-			Date publishing_year;
-			id_isbn = book.getIdIsbn();
-			name = book.getName();
-			author = book.getAuthor();
-			id_category = book.getIdCategory();
-			id_publisher = book.getIdPublisher();
-			quantity = book.getQuantity();
-			publishing_year = book.getPublishingYear();
-			String query = "UPDATE book SET id_isbn = '" +id_isbn+"', name = '"+name+
-					"', author = '"+author+
-					"', id_category = '"+id_category+"', id_publisher = '"+id_publisher+"', quantity = '"+quantity+"', publishing_year = '"+publishing_year+"' WHERE id_book = '"+book.getIdBook()+"'";
+			String query = "UPDATE book SET id_isbn=?, name=?, author=?, id_category=?, id_publisher=?, publishing_year=? WHERE id_book =?";
 			System.out.println(query);
 			ps = (PreparedStatement) cnn.prepareStatement(query);
+			ps.setString(1, book.getIdIsbn());
+			ps.setString(2, book.getName());
+			ps.setString(3, book.getAuthor());
+			ps.setInt(4, book.getIdCategory());
+			ps.setInt(5, book.getIdPublisher());
+			ps.setDate(6, book.getPublishingYear());
+			ps.setString(7, book.getIdBook());
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// 
+			Alert alert = new Alert(AlertType.ERROR,"Error... Cannot modify this book",ButtonType.OK);
+			alert.setHeaderText(null);
+			alert.showAndWait();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
 		}
+	}
+
+	@Override
+	public boolean addMore(Book book,int quantity) {
+		Connection cnn = DBConnection.open();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = (PreparedStatement) cnn.prepareStatement("UPDATE book SET quantity=quantity+?,remain=remain+? WHERE id_book=?");
+			ps.setInt(1, quantity);
+			ps.setInt(2, quantity);
+			ps.setString(3, book.getIdBook());
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			// 
+			e.printStackTrace();
+			return false;
+		}finally {
+			DBConnection.close(rs, ps, cnn);
+		}
+		return true;
+	}
+
+	@Override
+	public boolean reduceBook(Book book,int quantity) {
+		if(book.getRemain() < quantity) {
+			return false;
+		}
+		Connection cnn = DBConnection.open();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = (PreparedStatement) cnn.prepareStatement("UPDATE book SET quantity=quantity-?,remain=remain-? WHERE id_book=?");
+			ps.setInt(1, quantity);
+			ps.setInt(2, quantity);
+			ps.setString(3, book.getIdBook());
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			// 
+			e.printStackTrace();
+			return false;
+		}finally {
+			DBConnection.close(rs, ps, cnn);
+		}
+		return true;
 	}
 	
 }

@@ -1,20 +1,14 @@
 package dao;
 
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Alert.AlertType;
-import model.Book;
 import model.Staff;
 
-public class StaffDAO {
+public class StaffDAO implements IStaffDAO{
 	public Staff getUser(String user, String pass) {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
@@ -37,7 +31,7 @@ public class StaffDAO {
 			}else {
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -66,7 +60,7 @@ public class StaffDAO {
 			}else {
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -78,7 +72,6 @@ public class StaffDAO {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
-		Staff staff = null;
 		try {
 			ps = (PreparedStatement) cnn.prepareStatement("UPDATE staff SET name=?,address=?,tel=?,email=?,username=?,password=?,gender=? WHERE id = ?");
 			ps.setString(1, newStaff.getName());
@@ -91,7 +84,7 @@ public class StaffDAO {
 			ps.setInt(8, newStaff.getId());
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}finally {
 			DBConnection.close(rs, ps, cnn);

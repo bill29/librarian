@@ -1,6 +1,5 @@
 package dao;
 
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -9,12 +8,9 @@ import java.util.List;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 
-import model.Book;
-import model.BorrowingInfo;
 import model.Member;
-import model.ClassDTO.BookDTO;
 
-public class MemberDAO {
+public class MemberDAO implements IMemberDAO{
 	public List<Member> getAllMember() {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
@@ -36,7 +32,7 @@ public class MemberDAO {
 				listMember.add(new Member(id_member, name, gender, address, tel, email));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			System.out.println(e.getMessage());
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -68,7 +64,7 @@ public class MemberDAO {
 				listMember.add(new Member(id_member, name, gender, address, tel, email));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			System.out.println(e.getMessage());
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -91,7 +87,7 @@ public class MemberDAO {
 			ps.setString(6,member.getId());
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			System.out.println(e.getMessage());
 		}finally {
 			DBConnection.close(rs, ps, cnn);
@@ -112,13 +108,13 @@ public class MemberDAO {
 			ps.setString(5,member.getTel());
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			// 
 			System.out.println(e.getMessage());
 		}finally {
 			DBConnection.close(rs, ps, cnn);
 		}
 	}
-	public void delete(Member member) {
+	public boolean delete(Member member) {
 		Connection cnn = DBConnection.open();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -128,11 +124,12 @@ public class MemberDAO {
 			ps.setString(1, member.getId());
 			ps.executeUpdate();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			System.out.println(e.getMessage());
+			// 
+			return false;
 		}finally {
 			DBConnection.close(rs, ps, cnn);
 		}
+		return true;
 	}
 	
 }
@@ -141,7 +138,7 @@ public class MemberDAO {
 //String condition = "";
 //if(column!=null && key != null) condition = "and m."+column+" LIKE '%"+key+"%'";
 //
-//List<BorrowingInfo> listBorrow = null;
+//List<Bill> listBorrow = null;
 //try {
 //	String query = "select b.id_bill, d.id_book, bk.name, b.id_member, m.name, id_staff, borrowing_date, return_date, name_state " + 
 //			"from borrow_book b, detail_bill d, member m, book bk, state s " + 

@@ -3,7 +3,6 @@ package controller;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -22,6 +21,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -35,7 +35,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyCode;
@@ -44,11 +43,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
-import model.BorrowingInfo;
+import model.Bill;
 import model.Member;
 
-public class MemberInfoController implements Initializable{
+public class MemberInfoController implements Initializable, IMemberInfoController{
 	private MemberDAO memberDAO = new MemberDAO();
 	private BorrowDAO borrowDAO = new BorrowDAO();
 	@FXML
@@ -94,19 +92,19 @@ public class MemberInfoController implements Initializable{
 	
 	
 	@FXML
-	private TableView<BorrowingInfo> tbvBorrowingInfo;
-	private ObservableList<BorrowingInfo> listBorrowingInfo;
+	private TableView<Bill> tbvBorrowingInfo;
+	private ObservableList<Bill> listBorrowingInfo;
 	
 	@FXML
-	private TableColumn<BorrowingInfo, String> idSearchColTab2;
+	private TableColumn<Bill, String> idSearchColTab2;
 	@FXML
-	private TableColumn<BorrowingInfo, String> nameSearchColTab2;
+	private TableColumn<Bill, String> nameSearchColTab2;
 	@FXML
-	private TableColumn<BorrowingInfo, Integer> idStaffColTab2;
+	private TableColumn<Bill, Integer> idStaffColTab2;
 	@FXML
-	private TableColumn<BorrowingInfo, String> idBillColTab2;
+	private TableColumn<Bill, String> idBillColTab2;
 	@FXML
-	private TableColumn<BorrowingInfo, Date> dateBorrowColTab2;
+	private TableColumn<Bill, Date> dateBorrowColTab2;
 	
 	@FXML
 	private RadioButton radioSearchByID, radioSearchByName;
@@ -117,7 +115,7 @@ public class MemberInfoController implements Initializable{
 
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
-		// TODO Auto-generated method stub
+		// 
 		initTbvMemberInfo();
 		initTbvBorrowingInfo();
 		initCbSearch();
@@ -153,18 +151,18 @@ public class MemberInfoController implements Initializable{
 		tbvMemberInfo.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
 			@Override
 			public void handle(ContextMenuEvent event) {
-				// TODO Auto-generated method stub
+				// 
 				contextMember.show(tbvMemberInfo,event.getScreenX(),event.getScreenY());
 			}
 		});
 	}
 	
 	private void initTbvBorrowingInfo() {
-		idSearchColTab2.setCellValueFactory(new PropertyValueFactory<BorrowingInfo, String>("id_member"));
-		nameSearchColTab2.setCellValueFactory(new PropertyValueFactory<BorrowingInfo, String>("name_member"));
-		idStaffColTab2.setCellValueFactory(new PropertyValueFactory<BorrowingInfo, Integer>("id_staff"));
-		idBillColTab2.setCellValueFactory(new PropertyValueFactory<BorrowingInfo, String>("id_bill"));
-		dateBorrowColTab2.setCellValueFactory(new PropertyValueFactory<BorrowingInfo, Date>("borrowing_date"));
+		idSearchColTab2.setCellValueFactory(new PropertyValueFactory<Bill, String>("id_member"));
+		nameSearchColTab2.setCellValueFactory(new PropertyValueFactory<Bill, String>("name_member"));
+		idStaffColTab2.setCellValueFactory(new PropertyValueFactory<Bill, Integer>("id_staff"));
+		idBillColTab2.setCellValueFactory(new PropertyValueFactory<Bill, String>("id_bill"));
+		dateBorrowColTab2.setCellValueFactory(new PropertyValueFactory<Bill, Date>("borrowing_date"));
 		
 		listBorrowingInfo = FXCollections.observableArrayList(borrowDAO.searchBorrowInfo(null, null));
 		tbvBorrowingInfo.setItems(listBorrowingInfo);
@@ -179,13 +177,15 @@ public class MemberInfoController implements Initializable{
 			            	loader.setLocation(getClass().getResource("/view/StageBorrowInfo/StageBorrowInfo.fxml"));
 		            		Parent root = loader.load();
 							DetailBillController controller = loader.getController();
-							controller.setId_bill(tbvBorrowingInfo.getSelectionModel().getSelectedItem().getId_bill());
+							Bill bill = tbvBorrowingInfo.getSelectionModel().getSelectedItem();
+							if(bill == null) return;
+							controller.setId_bill(bill.getId_bill());
 							Stage stage = new Stage();
 							stage.setScene(new Scene(root));
 							stage.initModality(Modality.APPLICATION_MODAL);
 							stage.showAndWait();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
+							// 
 							e.printStackTrace();
 						}
 		            	
@@ -195,6 +195,7 @@ public class MemberInfoController implements Initializable{
 		});
 	}
 	
+	@Override
 	public void searchMemberInfo(ActionEvent evt) {
 		String key = tfSearchMember.getText();
 		if(key.equals("")) {
@@ -224,7 +225,7 @@ public class MemberInfoController implements Initializable{
 		listMembers.clear();
 		listMembers.addAll(memberDAO.searchBy(column,key));
 	}
-	
+	@Override
 	public void showTab(ActionEvent evt) {
 		SelectionModel<Tab> model = tabPane.getSelectionModel();
 		if(evt.getSource() == btnMember) {
@@ -238,7 +239,6 @@ public class MemberInfoController implements Initializable{
 		ObservableList<String> list = FXCollections.observableArrayList(new String[]{"ID","Name","Address","Email","Telephone"});
 		cbSearch.setItems(list);
 	}
-	
 	public void keyEvtHandle(KeyEvent evt) {
 		if(evt.getCode() == KeyCode.BACK_SPACE) {
 			if(evt.getSource() == tfSearchMember) {
@@ -249,17 +249,19 @@ public class MemberInfoController implements Initializable{
 			}
 		}
 	}
+	@Override
 	public void turnBack(ActionEvent evt) {
 		try {
 			Parent root = FXMLLoader.load(getClass().getResource("/view/Home.fxml"));
 			Stage stage = (Stage)((Node)evt.getSource()).getScene().getWindow();
 			stage.setScene(new Scene(root));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}
 	}
 	
+	@Override
 	public void refresh(Tab tab) {
 		if(tab == tabMembers) {
 			listMembers.clear();
@@ -272,6 +274,7 @@ public class MemberInfoController implements Initializable{
 		}
 	}
 	
+	@Override
 	public void modify(ActionEvent evt) {
 		try {
 			Member member = tbvMemberInfo.getSelectionModel().getSelectedItem();
@@ -292,11 +295,12 @@ public class MemberInfoController implements Initializable{
 			stage.showAndWait();
 			refresh(tabMembers);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}
 	}
-	
+
+	@Override
 	public void add(ActionEvent evt) {
 		try {
 			FXMLLoader loader = new FXMLLoader();
@@ -308,11 +312,12 @@ public class MemberInfoController implements Initializable{
 			stage.showAndWait();
 			refresh(tabMembers);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// 
 			e.printStackTrace();
 		}
 	} 
-	
+
+	@Override
 	public void delete(ActionEvent evt) {
 		Member member = tbvMemberInfo.getSelectionModel().getSelectedItem();
 		if(member == null) {
@@ -326,10 +331,20 @@ public class MemberInfoController implements Initializable{
 		alert.setHeaderText(null);
 		Optional<ButtonType> optional = alert.showAndWait();
 		if(optional.get() == ButtonType.NO) return;
-		memberDAO.delete(member);
+		if(!memberDAO.delete(member)) {
+			Alert alert2 = new Alert(AlertType.ERROR,"Cannot delete this member",ButtonType.OK);
+			alert2.setHeaderText(null);
+			alert2.showAndWait();
+			refresh(tabMembers);
+			return;
+		}
+		Alert alert2 = new Alert(AlertType.INFORMATION,"Delete successful!",ButtonType.OK);
+		alert2.setHeaderText(null);
+		alert2.showAndWait();
 		refresh(tabMembers);
 	}
-	
+
+	@Override
 	public void searchTab2(ActionEvent evt) {
 		if(tfSearchTab2.getText().isEmpty()) {
 			refresh(tabSearchBorrowingInfo);
@@ -342,7 +357,8 @@ public class MemberInfoController implements Initializable{
 			listBorrowingInfo.addAll(borrowDAO.searchBorrowInfo("name", tfSearchTab2.getText()));
 		}
 	}
-	
+
+	@Override
 	public void autoSearch(ActionEvent evt) {
 		radioSearchByID.setSelected(true);
 		tfSearchTab2.setText(tbvMemberInfo.getSelectionModel().getSelectedItem().getId());

@@ -7,13 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import com.sun.javafx.PlatformUtil;
-
 import controller.UpdateBookController.ModifyBookController;
 import dao.BookDAO;
 import dao.CategoryDAO;
 import dao.PublisherDAO;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -25,6 +22,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -33,28 +31,24 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionModel;
-import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import model.Book;
 import model.Category;
 import model.Publisher;
 import model.ClassDTO.BookDTO;
 
-public class BookInfoController implements Initializable{
+public class BookInfoController implements Initializable, IBookInfoController{
 	
 	//Declare DAO
 	private final BookDAO bookDAO = new BookDAO();
@@ -66,6 +60,9 @@ public class BookInfoController implements Initializable{
 	private Tab tabBooks,tabCategories,tabPublisher;
 	@FXML
 	private TabPane tabPane;
+	
+	@FXML
+	private Button btnCategories,btnBook,btnPublisher;
 	
 	//getter
 	public Tab getTabBooks() {
@@ -96,7 +93,7 @@ public class BookInfoController implements Initializable{
 	@FXML
 	private ContextMenu contextBook;
 	@FXML
-	private MenuItem itemModify,itemDelete;
+	private MenuItem itemModify,itemDelete,itemAddMore,itemReduceBook;
 	private ObservableList<BookDTO> listBook;
 	
 	
@@ -156,7 +153,7 @@ public class BookInfoController implements Initializable{
 
 			@Override
 			public void handle(ContextMenuEvent event) {
-				// TODO Auto-generated method stub
+				
 				contextBook.show(tbvBookInfo,event.getScreenX(),event.getScreenY());
 			}
 		});
@@ -212,14 +209,12 @@ public class BookInfoController implements Initializable{
 			Stage stage = (Stage)((Node)evt.getSource()).getScene().getWindow();
 			stage.setScene(new Scene(root));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+
 	
-	@FXML
-	private Button btnCategories,btnBook,btnPublisher;
-	
+	@Override
 	public void showTab(ActionEvent evt) {
 		SelectionModel<Tab> model = tabPane.getSelectionModel();
 		if(evt.getSource() == btnBook) {
@@ -288,6 +283,7 @@ public class BookInfoController implements Initializable{
 	private RadioButton radioSearchByID, radioSearchByName;
 	@FXML
 	private TextField tfSearchCategories;
+	@Override
 	public void searchCategories(ActionEvent evt) {
 		List<Category> listData = null;
 		String key = tfSearchCategories.getText();
@@ -299,7 +295,6 @@ public class BookInfoController implements Initializable{
 			try{
 				Integer.parseInt(key);
 			}catch (NumberFormatException e) {
-				// TODO: handle exception
 				System.out.println("ID khong hop le");
 				return;
 			}
@@ -344,11 +339,10 @@ public class BookInfoController implements Initializable{
 			stage.showAndWait();
 			refresh(tabBooks);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
+	@Override
 	public void deleteBook(ActionEvent evt) {
 		BookDTO book = tbvBookInfo.getSelectionModel().getSelectedItem();
 		if(book == null) {
@@ -357,11 +351,19 @@ public class BookInfoController implements Initializable{
 			alert.showAndWait();
 			return;
 		}
-			Alert alert = new Alert(AlertType.INFORMATION, "delete " +book.toString(), ButtonType.YES, ButtonType.NO);
+			Alert alert = new Alert(AlertType.INFORMATION, "Delete - " + book.getName() + " : " + book.getIdBook() + " ?", ButtonType.YES, ButtonType.NO);
 			alert.setHeaderText(null);
 			Optional<ButtonType> option = alert.showAndWait();
 			if(option.get() == ButtonType.YES) {
-				bookDAO.deleteBook(book);
+				if(!bookDAO.deleteBook(book)) {
+					Alert alert2 = new Alert(AlertType.ERROR,"Book already borrowed",ButtonType.OK);
+					alert2.setHeaderText(null);
+					alert2.showAndWait();
+				}else {
+					Alert alert2 = new Alert(AlertType.INFORMATION, "Delete book successful", ButtonType.OK);
+					alert2.setHeaderText(null);
+					alert2.showAndWait();
+				}
 				refresh(tabBooks);
 			}
 	}
@@ -386,8 +388,84 @@ public class BookInfoController implements Initializable{
 			stage.showAndWait();
 			refresh(tabBooks);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
+		}
+	}
+	@Override
+	public void addMore(ActionEvent evt) {
+		TextInputDialog dialog = new TextInputDialog();
+		 
+		dialog.setTitle("Add more book");
+		dialog.setHeaderText("Enter quantity:");
+		dialog.setContentText("Quantity:");
+		 
+		Optional<String> result = dialog.showAndWait();
+		String input = result.get();
+		try {
+			int quantity = Integer.parseInt(input);
+			if(quantity <= 0) {
+				Alert alert = new Alert(AlertType.ERROR,"number invalid",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+				refresh(tabBooks);
+				return;
+				
+			}
+			if(!bookDAO.addMore(tbvBookInfo.getSelectionModel().getSelectedItem(), quantity)) {
+				Alert alert = new Alert(AlertType.ERROR,"Cannot add more book",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+			}else {
+				Alert alert = new Alert(AlertType.INFORMATION,quantity + " books added",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+			}
+			
+			refresh(tabBooks);
+		}catch (NumberFormatException e) {
+		
+			Alert alert = new Alert(AlertType.ERROR,"please enter number",ButtonType.OK);
+			alert.setHeaderText(null);
+			alert.showAndWait();
+			return;
+		}
+	}
+	@Override
+	public void reduceBook() {
+		TextInputDialog dialog = new TextInputDialog();
+		 
+		dialog.setTitle("Reduce book");
+		dialog.setHeaderText("Enter quantity:");
+		dialog.setContentText("Quantity:");
+		 
+		Optional<String> result = dialog.showAndWait();
+		String input = result.get();
+		try {
+			int quantity = Integer.parseInt(input);
+			if(quantity <= 0) {
+				Alert alert = new Alert(AlertType.ERROR,"number invalid",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+				return;
+			}
+			if(!bookDAO.reduceBook(tbvBookInfo.getSelectionModel().getSelectedItem(), quantity)) {
+				Alert alert = new Alert(AlertType.ERROR,"Cannot reduce book",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+			}else {
+				Alert alert = new Alert(AlertType.INFORMATION,quantity + " books reduced",ButtonType.OK);
+				alert.setHeaderText(null);
+				alert.showAndWait();
+			}
+			
+			refresh(tabBooks);
+		}catch (NumberFormatException e) {
+
+			Alert alert = new Alert(AlertType.ERROR,"please enter number",ButtonType.OK);
+			alert.setHeaderText(null);
+			alert.showAndWait();
+			return;
 		}
 	}
 }

@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -20,6 +18,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -28,38 +27,36 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.SelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import model.Book;
-import model.BorrowingInfo;
+import model.Bill;
 import model.DetailBill;
 import model.Member;
 import model.ClassDTO.BookBill;
-import model.ClassDTO.BookDTO;
+import model.ClassDTO.SelectedBook;
 
-public class BorrowController implements Initializable{
+public class BorrowController implements Initializable, IBorrowController{
 	@FXML
 	private TabPane tabPane;
 	
 	@FXML
-	private Tab tabCreateBill, tabReturnBook,tabListBorrow;
+	private Tab tabCreateBill, tabReturnBook,tabListBorrow,tabLost;
 	@FXML
 	private Button btnCreateBillTab, btnListBorrowTab, btnReturnBookTab,btnBigbtn;
 	
@@ -71,7 +68,8 @@ public class BorrowController implements Initializable{
 	private TableColumn<BookBill, String> idBillColTab1,idBookColTab1,nameBookColTab1,idMemberColTab1,nameMemberColTab1,stateColTab1;
 	@FXML
 	private TableColumn<BookBill, Date> dateColTab1;
-	
+	@FXML
+	private ComboBox<String> cbState;
 	
 	@FXML
 	private TableView<Book> tbvBookInfoTab2;
@@ -112,10 +110,10 @@ public class BorrowController implements Initializable{
 	private TextField tfSearchBillTab3;
 	@FXML
 	private Label lbIDMemberTab3, lbNameMemberTab3, lbIDStaffTab3, lbBorrowingDateTab3;
-
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
+		
 		initTbvBookInfoTab2();
 		initTbvDetailBill();
 		initTbvBookBill();
@@ -128,6 +126,8 @@ public class BorrowController implements Initializable{
 					 refresh(tabCreateBill);
 				 }else if(t1.equals(tabReturnBook)) {
 					 refresh(tabReturnBook);
+				 }else if(t1.equals(tabLost)) {
+					 refresh(tabLost);
 				 }
 		     }
 		});
@@ -146,7 +146,7 @@ public class BorrowController implements Initializable{
 		checkColTab2.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Book,Boolean>, ObservableValue<Boolean>>() {
 			@Override
 			public ObservableValue<Boolean> call(CellDataFeatures<Book, Boolean> param) {
-				// TODO Auto-generated method stub
+				
 				Book book = param.getValue();
 				SimpleBooleanProperty booleanProp = new SimpleBooleanProperty(listSelectedBook.contains(book));
 				booleanProp.addListener(new ChangeListener<Boolean>() {
@@ -196,7 +196,7 @@ public class BorrowController implements Initializable{
 		checkColTab3.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<DetailBill,Boolean>, ObservableValue<Boolean>>() {
 			@Override
 			public ObservableValue<Boolean> call(CellDataFeatures<DetailBill, Boolean> param) {
-				// TODO Auto-generated method stub
+				
 				DetailBill detailBill = param.getValue();
 				SimpleBooleanProperty booleanProp = new SimpleBooleanProperty(listSelectedDBill.contains(detailBill));
 				booleanProp.addListener(new ChangeListener<Boolean>() {
@@ -244,11 +244,22 @@ public class BorrowController implements Initializable{
 		dateColTab1.setCellValueFactory(new PropertyValueFactory<BookBill,Date>("borrowing_date"));
 		stateColTab1.setCellValueFactory(new PropertyValueFactory<BookBill,String>("name_state"));
 		
-		listBookBill = FXCollections.observableArrayList(borrowDAO.getBookBillInfo(null));
+		listBookBill = FXCollections.observableArrayList(borrowDAO.getBookBillInfo(null,-1));
 		tbvBookBill.setItems(listBookBill);
+		
+		cbState.setItems(FXCollections.observableArrayList(borrowDAO.getAllState()));
+		cbState.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+				listBookBill.clear();
+				listBookBill.addAll(borrowDAO.getBookBillInfo(null, cbState.getSelectionModel().getSelectedIndex()));
+			}
+		});
+		cbState.getSelectionModel().selectFirst();
+		stateColTab1.setMaxWidth(130);
 	}
 	
-	
+	@Override
 	public void searchBook(ActionEvent evt) {
 		String str = tfSearchBookTab2.getText();
 		if(str.isEmpty()) return;
@@ -279,7 +290,7 @@ public class BorrowController implements Initializable{
 			lbNameMemberTab3.setText("");
 		}else if(tab == tabListBorrow) {
 			listBookBill.clear();
-			listBookBill.addAll(borrowDAO.getBookBillInfo(null));
+			listBookBill.addAll(borrowDAO.getBookBillInfo(null,cbState.getSelectionModel().getSelectedIndex()));
 		}
 	}
 	
@@ -300,11 +311,11 @@ public class BorrowController implements Initializable{
 			Stage stage = (Stage)((Node)evt.getSource()).getScene().getWindow();
 			stage.setScene(new Scene(root));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
+	@Override
 	public Member checkIDMember(ActionEvent evt) {
 		String key = tfSearchIDMemberTab2.getText();
 		if(key.isEmpty()) {
@@ -350,11 +361,11 @@ public class BorrowController implements Initializable{
 			stage.showAndWait();
 			refresh(tabCreateBill);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
+	@Override
 	public void searchDetailBill(ActionEvent evt) {
 		String id = tfSearchBillTab3.getText();
 		if(id.isEmpty()) {
@@ -380,7 +391,7 @@ public class BorrowController implements Initializable{
 		listDetailBill.clear();
 		listDetailBill.addAll(tmpList);
 		
-		BorrowingInfo borrowInfo = borrowDAO.searchBorrowInfo("id_bill", id).get(0);
+		Bill borrowInfo = borrowDAO.searchBorrowInfo("id_bill", id).get(0);
 		lbIDMemberTab3.setText("ID Member: " + borrowInfo.getId_member());
 		lbNameMemberTab3.setText("Name: "+borrowInfo.getName_member());
 		lbIDStaffTab3.setText("ID Staff: "+ borrowInfo.getId_staff());
@@ -399,6 +410,30 @@ public class BorrowController implements Initializable{
 		Optional<ButtonType> optional = alert.showAndWait();
 		if(optional.get() == ButtonType.NO) return;
 		borrowDAO.returnBook(listSelectedDBill);
+		Alert alert2 = new Alert(AlertType.INFORMATION, "Return successful", ButtonType.OK);
+		alert2.setHeaderText(null);
+		alert2.showAndWait();
+		listSelectedDBill.clear();
 		searchDetailBill(evt);
 	}
+	
+	public void reportLosted(ActionEvent evt) {
+		if(listSelectedDBill.size()==0) {
+			Alert alert = new Alert(AlertType.ERROR,"Error...",ButtonType.OK);
+			alert.setHeaderText(null);
+			alert.showAndWait();
+			return;
+		}
+		Alert alert = new Alert(AlertType.CONFIRMATION,"Are you sure?",ButtonType.YES, ButtonType.NO);
+		alert.setHeaderText(null);
+		Optional<ButtonType> optional = alert.showAndWait();
+		if(optional.get() == ButtonType.NO) return;
+		borrowDAO.reportLostedBooks(listSelectedDBill);
+		Alert alert2 = new Alert(AlertType.INFORMATION, "Reported!", ButtonType.OK);
+		alert2.setHeaderText(null);
+		alert2.showAndWait();
+		listSelectedDBill.clear();
+		searchDetailBill(evt);
+	}
+	
 }
